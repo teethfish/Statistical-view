@@ -1,0 +1,37 @@
+clc; close all; clear all;
+
+casename = '';
+time = 
+
+[x, y, z] = cgns_read_part_position(casename, time);
+%change particle position to satisfy the new domain information
+x = x - 40 + 0.01;
+z = z + 0.02;
+
+Np = length(x);
+
+fileID = fopen('part.config','w');
+fprintf(fileID,'%s %d\n','n',Np);
+fprintf(fileID,'%s %f\n','(l/a)',1.000000);
+fprintf(fileID,'\n');
+for i = 1:Np
+        fprintf(fileID,'%s %f\n','r',1.000000);
+        fprintf(fileID,'%s %f %f %f\n','(x, y, z)',x(i), y(i), z(i));
+        fprintf(fileID,'%s %f %f %f\n','(aFx, aFy, aFz)',0.0000, 0.0000, 0.0000);
+        fprintf(fileID,'%s %f %f %f\n','(aLx, aLy, aLz)',0.0000, 0.0000, 0.0000);
+        fprintf(fileID,'%s %f\n','rho',3.000000);
+        fprintf(fileID,'%s %f\n','E',1000000.000000);
+        fprintf(fileID,'%s %f\n','sigma',0.5000000);
+        fprintf(fileID,'%s %f\n','e_dry',0.98000000);
+        fprintf(fileID,'%s %f\n','l_rough',0.000100);
+        fprintf(fileID,'%s %d\n','order',2);
+        fprintf(fileID,'%s %f\n','rs/r',1.200000);
+        fprintf(fileID,'%s %f\n','spring_k',0.000000);
+        fprintf(fileID,'%s %f %f %f\n','spring (x, y, z)',0.0000, 0.0000, 0.0000);
+        fprintf(fileID,'%s %f\n','spring_l',0.000000);
+        fprintf(fileID,'%s %d\n','translating',1);
+        fprintf(fileID,'%s %d\n','rotating',1);
+        fprintf(fileID,'\n');
+end
+
+fclose(fileID);
