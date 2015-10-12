@@ -1,4 +1,4 @@
-function[time, norm_t, norm_f, Fhx, Fhz, Fix, Fiz, Fx, Fz, PPE, PKE, FKE, Ex, Ez, PPE_decay, PKE_decay, FKE_decay, epsilon_fluid, epsilon_part] = calculate_energy_budget(casename, savename, time, a, g, rho_p, theta_p);
+function[time, norm_t, norm_f, Fhx, Fhz, Fix, Fiz, Fx, Fz, PPE, PKE, FKE, Ex, Ez, PPE_decay, PKE_decay, FKE_decay, epsilon_fluid, epsilon_part] = calculate_energy_budget(casename, savename, time, a, g, rho_p, theta_p)
 %clc; clear all; close all;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Calculate the potential energy of particles, kinetic energy of particles and fluid
