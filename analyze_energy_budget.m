@@ -1,4 +1,5 @@
-clc; clear all; close all;
+function[time, norm_t, norm_f, Fhx, Fhz, Fix, Fiz, Fx, Fz, PPE, PKE, FKE, Ex, Ez, PPE_decay, PKE_decay, FKE_decay, epsilon_fluid, epsilon_part] = calculate_energy_budget(casename, savename, time, a, g, rho_p, theta_p);
+%clc; clear all; close all;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Calculate the potential energy of particles, kinetic energy of particles and fluid
 %Calculate the decay rate of each of them,using one-side forward euler
@@ -11,19 +12,19 @@ clc; clear all; close all;
 %               The normalization of decay rate and dissipation is \Delta E/norm_t
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-casename = '';
-
+%casename = '';
 [~, xe, ~, dx, ~, ~, ~, dy, zs, ~, ~, dz] = calculate_domain_info(casename);
-
 %information regarding the simulations
-a = 1; g = 10;
+%a = 1; g = 10;
 rho_f = 1;nu = 1;
-rho_p = 2.6; theta_p = 0;
-t1 = 0:0.1:2.5; t2 = 2.8:0.1:2.9;
-time = [t1, t2];
-savename = '_as=1';
-savedata{1} = 'force.mat';
-savedata{2} = 'energy_budget.mat';
+%rho_p = 2.6; theta_p = 0;
+%t1 = 0:0.1:2.5; t2 = 2.8:0.1:2.9;
+%time = [t1, t2];
+%savename = '_as=1';
+tmp = ['force',savename,'.mat'];
+savedata{1} = tmp;
+tmp = ['energy_budget',savename,'.mat'];
+savedata{2} = tmp;
 
 v_p = 4*pi*a^3/3; m_f = dx*dy*dz*rho_f;
 
@@ -104,3 +105,4 @@ eval(sprintf('Ex%s = Ex;',savename));eval(sprintf('Ez%s = Ez;',savename));
 eval(sprintf('PPE_decay%s = PPE_decay;',savename)); eval(sprintf('PKE_decay%s = PKE_decay;',savename)); eval(sprintf('FKE_decay%s = FKE_decay;',savename));
 eval(sprintf('epsilon_fluid%s = epsilon_fluid;',savename)); eval(sprintf('epsilon_part%s = epsilon_part;',savename));
 save(savedata{2},'time_*','norm_t_*','PPE_*','PKE_*','Ex_*','Ez_*','FKE_*','PPE_decay_*','PKE_decay_*','FKE_decay_*','epsilon_fluid_*','epsilon_part_*');
+end
