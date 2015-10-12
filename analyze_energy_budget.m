@@ -83,7 +83,7 @@ eval(sprintf('time%s = time;',savename));eval(sprintf('norm_t%s = norm_t;',saven
 eval(sprintf('Fhx%s = Fhx;',savename));eval(sprintf('Fhz%s = Fhz;',savename));
 eval(sprintf('Fix%s = Fix;',savename));eval(sprintf('Fiz%s = Fiz;',savename));
 eval(sprintf('Fx%s = Fx;',savename));eval(sprintf('Fz%s = Fz;',savename));
-save(savedata{1},'time_','norm_t','norm_f','Fhx','Fhz','Fix','Fiz','Fx','Fz');
+save(savedata{1},'time_*','norm_t_*','norm_f_*','Fhx_*','Fhz_*','Fix_*','Fiz_*','Fx_*','Fz_*');
 
 PPE(:,1) = PPE(:,1)/E0;
 PKE(:,1) = PKE(:,1)/E0;
@@ -103,4 +103,4 @@ eval(sprintf('PPE%s = PPE;',savename)); eval(sprintf('PKE%s = PKE;',savename));e
 eval(sprintf('Ex%s = Ex;',savename));eval(sprintf('Ez%s = Ez;',savename));
 eval(sprintf('PPE_decay%s = PPE_decay;',savename)); eval(sprintf('PKE_decay%s = PKE_decay;',savename)); eval(sprintf('FKE_decay%s = FKE_decay;',savename));
 eval(sprintf('epsilon_fluid%s = epsilon_fluid;',savename)); eval(sprintf('epsilon_part%s = epsilon_part;',savename));
-save(savedata{2},'time','norm_t','PPE','PKE','Ex','Ez','FKE','PPE_decay','PKE_decay','FKE_decay','epsilon_fluid','epsilon_part');
+save(savedata{2},'time_*','norm_t_*','PPE_*','PKE_*','Ex_*','Ez_*','FKE_*','PPE_decay_*','PKE_decay_*','FKE_decay_*','epsilon_fluid_*','epsilon_part_*');
