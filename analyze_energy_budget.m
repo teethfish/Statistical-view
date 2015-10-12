@@ -20,6 +20,7 @@ rho_f = 1;nu = 1;
 %rho_p = 2.6; theta_p = 0;
 %t1 = 0:0.1:2.5; t2 = 2.8:0.1:2.9;
 %time = [t1, t2];
+Nt = length(time);
 %savename = '_as=1';
 tmp = ['force',savename,'.mat'];
 savedata{1} = tmp;
@@ -74,7 +75,6 @@ for tt = 1:Nt
 
         U = U.*phase; V = V.*phase; W = W.*phase;
         FKE(tt,1) = 0.5 * sum(sum(sum((U.*U + V.*V + W.*W))))*m_f;
-        end
 end
 
 Fhx = Hfx; Fhz = Hfz;
