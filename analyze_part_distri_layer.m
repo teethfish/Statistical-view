@@ -1,18 +1,19 @@
+function [time, u_mean, w_mean,x_mean, z_mean] = calculate_part_distri_layer(casename, time, savename)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %This script will generally separate the particle into groups due to their inital position
 %and track the mean velocity and position in each layer
+%time will not be normalized here, please normalize time after call this function
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%clc; close all; clear all;
 
-clc; close all; clear all;
-
-casename = 
-time = 0:0.1:30;
+%casename = 
+%time = 0:0.1:30;
 Nt = length(time);
-savename = '_as=1';
-savedata = 'part_layer.mat';
+%savename = '_as=1';
+tmp = ['part_layer',savename,'.mat'];
+savedata = tmp;
 
 [xs, ~, ~, ~, ~, ~, ~, ~, zs] = calculate_domain_info(casename);
-
 %% generate particle group, particles are saves from bottom to top
 %% part_number(M,Ncase) will record how many particles in each layer, part(tmp, j, i) will store particle's index in each layer
 %% M is the particle layers
@@ -71,4 +72,4 @@ eval(sprintf('x_mean%s = x_mean;',savename));
 eval(sprintf('z_mean%s = z_mean;',savename));
 
 save(savedata,'time_*','u_mean_*','w_mean_*','x_mean_*','z_mean_*');
-
+end
