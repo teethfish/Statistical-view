@@ -65,11 +65,11 @@ for tt = 1:Nt
                               FUZ.*FUZ + FWX.*FWX + 2*FUZ.*FWX + FVZ.*FVZ + FWY.*FWY + 2*FVZ.*FWY))))*dx*dy*dz;
         epsilon_part(tt,1) = -sum(Fhx.*u + Fhy.*v + Fhz.*w);
 
-        %%potential eneregy of particle is calculated as (instantenous height - a),subtract the intial value
-        PPE(tt,1) = sum((xe - x)*sin(theta_p{i}) + (z - zs)*cos(theta_p{i}))*(rho_p{i} - rho_f)*v_p*g - E_ref(i,1);
-        PKE(tt,1) = 0.5 * sum(u.*u + v.*v + w.*w) * v_p * rho_p{i};
-        Ex(tt,1) = 0.5 * sum(u.*u)*v_p * rho_p{i};
-        Ez(tt,1) = 0.5 * sum(w.*w)*v_p * rho_p{i};
+        %%potential eneregy of particle is calculated as sum(instantenous height),subtract the intial value
+        PPE(tt,1) = sum((xe - x)*sin(theta_p) + (z - zs)*cos(theta_p))*(rho_p - rho_f)*v_p*g - E_ref;
+        PKE(tt,1) = 0.5 * sum(u.*u + v.*v + w.*w) * v_p * rho_p;
+        Ex(tt,1) = 0.5 * sum(u.*u)*v_p * rho_p;
+        Ez(tt,1) = 0.5 * sum(w.*w)*v_p * rho_p;
 
         U = U.*phase; V = V.*phase; W = W.*phase;
         FKE(tt,1) = 0.5 * sum(sum(sum((U.*U + V.*V + W.*W))))*m_f;
