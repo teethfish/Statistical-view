@@ -15,18 +15,21 @@ int nparts;
 double nu;
 double rho_f;
 part_struct *parts;
-//part_struct *_parts;
 dom_struct dom;
-//dom_struct *_dom;
 BC bc;
-//BC *_bc;
 double *uf;
-//double *_uf;
 double *vf;
-//double *_vf;
 double *wf;
-//double *_wf;
 int *phase;
+
+int layer;
+double *zpos;
+//part_struct *_parts;
+//dom_struct *_dom;
+//BC *_bc;
+//double *_uf;
+//double *_vf;
+//double *_wf;
 //int *_phase;
 
 // Read main.config input file
@@ -39,10 +42,21 @@ void main_read_input(void)
   char fname[CHAR_BUF_SIZE] = "";
   sprintf(fname, "%s/main.config", ROOT_DIR);
   FILE *infile = fopen(fname, "r");
-  
+ 
   // read input
   fret = fscanf(infile, "tStart %lf\n", &tStart);
   fret = fscanf(infile, "tEnd %lf\n", &tEnd);
+
+  // read layer & positions
+  fret = fscanf(infile, "layer %d\n", &layer);
+  // zpos is supposed to be distance from the inlet
+  
+  zpos = (double*) malloc(layer * sizeof(double));
+  for (int k = 0; k < layer; k++) {
+    fret = fscanf(infile, "%lf\n", &zpos[k]);
+    printf("zpos[%d] is %f\n", k, zpos[k]);
+  }
+  
   fclose(infile);
 }
 
@@ -439,7 +453,7 @@ void domain_init(void)
   fret = fscanf(infile, "(Ys, Ye, Yn) %lf %lf %d\n", &dom.ys, &dom.ye, &dom.yn);
   fret = fscanf(infile, "(Zs, Ze, Zn) %lf %lf %d\n", &dom.zs, &dom.ze, &dom.zn);
   fret = fscanf(infile, "\n");
-
+  
   fret = fscanf(infile, "GPU DOMAIN DECOMPOSITION\n");
   fret = fscanf(infile, "DEV RANGE %d %d\n", &ibuf, &ibuf);
   fret = fscanf(infile, "n %d\n", &ibuf);
@@ -569,6 +583,10 @@ void domain_init(void)
   dom.Gcc.s2 = dom.Gcc.jn * dom.Gcc.s1;
   dom.Gcc.s3 = dom.Gcc.kn * dom.Gcc.s2;
 
+  // update the real position of zpos
+  for (int k = 0; k < layer; k++) {
+    zpos[k] = zpos[k] + dom.zs;
+  }
   #ifdef DEBUG
     show_domain();
   #endif
@@ -672,9 +690,6 @@ void cgns_fill_flow(void)
   cg_field_read(fn,bn,zn,sn, "Phase", Integer, range_min, range_max, phase);
 
   cg_close(fn);
-  double tmp = mean(dom.Gcc.s3, uf);
-  printf("mean u is %f\n", tmp);
-
 }
 
 // Show domain
@@ -767,6 +782,7 @@ void free_flow_vars(void)
   free(vf);
   free(wf);
   free(phase);
+  free(zpos);
 }
 
 void free_part_vars(void)

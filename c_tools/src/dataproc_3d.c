@@ -10,6 +10,18 @@
 #include "main.h"
 #include "dataproc_3d.h"
 
+/**** FUNCTIONS ****/
+void dissipation_3d(double nu);
+
+void mean_velocity(void);
+
+void rms_velocity(void);
+
+void record_3d_init(char *name);
+
+void record_3d(char *name);
+
+/**** VARIABLES ****/
 double *fux;
 double *fuy;
 double *fuz;
@@ -68,25 +80,20 @@ void free_3d(void)
   
 void analyze_3d(char *name)
 {
-  malloc_3d();
-  for (tt = 0; tt < nFiles; tt++){
-    // Read in new data and push to device
-    cgns_fill_flow();
-    calculate_gradient();
-    dissipation_3d(nu);
-    printf("dissipation is %f\n", dissipation);
-    //calculate mean velocity in the entire domain
-    u_mean = mean(dom.Gcc.s3, uf);
-    v_mean = mean(dom.Gcc.s3, vf);
-    w_mean = mean(dom.Gcc.s3, wf);
-    printf("umean is %f\n",u_mean); 
-    //calculate rms velocity in the entire domain
-    rms_velocity();
+  calculate_gradient();
+  dissipation_3d(nu);
+  printf("dissipation is %f\n", dissipation);
 
-    //write output file
-    record_3d(name);
-  }
-  free_3d();
+  //calculate mean velocity in the entire domain
+  u_mean = mean(dom.Gcc.s3, uf);
+  v_mean = mean(dom.Gcc.s3, vf);
+  w_mean = mean(dom.Gcc.s3, wf);
+
+  //calculate rms velocity in the entire domain
+  rms_velocity();
+
+  //write output file
+  record_3d(name);
 }
     
 void calculate_gradient(void)
@@ -104,11 +111,6 @@ void calculate_gradient(void)
 
 void vorticity(void)
 {
-  // Init arrays for vorticity
-  wx = (double*) malloc(dom.Gcc.s3 * sizeof(double));
-  wy = (double*) malloc(dom.Gcc.s3 * sizeof(double));
-  wz = (double*) malloc(dom.Gcc.s3 * sizeof(double));
-  
   sub(dom.Gcc.s3, fwy, fvz, wx);
   sub(dom.Gcc.s3, fuz, fwx, wy);
   sub(dom.Gcc.s3, fvx, fuy, wz);
@@ -177,13 +179,15 @@ void rms_velocity(void)
   
   multiply(dom.Gcc.s3, uf, uf, tmp);
   u_rms = mean(dom.Gcc.s3, tmp);
-
-  printf("u_rms is line 185 in dataproc_3d need to sqrt %f\n", u_rms);
+  u_rms = sqrt(u_rms);
+  
   multiply(dom.Gcc.s3, vf, vf, tmp);
   v_rms = mean(dom.Gcc.s3, tmp);
+  v_rms = sqrt(v_rms);
 
   multiply(dom.Gcc.s3, wf, wf, tmp);
   w_rms = mean(dom.Gcc.s3, tmp);
+  w_rms = sqrt(w_rms);
 
   free(tmp);
 }

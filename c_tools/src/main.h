@@ -12,7 +12,7 @@
 
 #include "cgns_reader.h"
 #include "dataproc_3d.h"
-
+#include "dataproc_2d.h"
 // #Defines
 #define FILE_NAME_SIZE 256
 #define CHAR_BUF_SIZE 256

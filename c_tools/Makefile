@@ -15,12 +15,14 @@ LDLIBS = -lm -L $(HDF5_DIR)/lib -L $(CGNS_DIR)/lib -lcgns -lhdf5
 SRCC =	main.c 		\
 	cgns_reader.c	\
         dataproc_3d.c	\
+	dataproc_2d.c	\
 	tool.c
         
 EXTRA = Makefile	\
 	main.h		\
 	cgns_reader.h	\
 	dataproc_3d.h	\
+	dataproc_2d.h	\
 	tool.h
 
 # compile normally:

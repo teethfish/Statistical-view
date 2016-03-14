@@ -77,29 +77,31 @@ extern int *flowFileMap;
 // Flow Variables
 extern double nu;
 extern double rho_f;
+extern int layer;
+extern double *zpos;
 extern double *uf;
-extern double *_uf;
+//extern double *_uf;
 extern double *vf;
-extern double *_vf;
+//extern double *_vf;
 extern double *wf;
-extern double *_wf;
+//extern double *_wf;
 extern int *phase;
-extern int *_phase;
+//extern int *_phase;
 
 // Number of Particles
 extern int nparts;
 
 // host and dev part_struct parts;
 extern part_struct *parts;
-extern part_struct *_parts;
+//extern part_struct *_parts;
 
 // host and dev dom_struct doms
 extern dom_struct dom;
-extern dom_struct *_dom;
+//extern dom_struct *_dom;
 
 // host and dev bc struct bcs
 extern BC bc;
-extern BC *_bc;
+//extern BC *_bc;
 
 /**** FUNCTIONS ****/
 // read input file
