@@ -32,42 +32,34 @@ int main(int argc, char *argv[])
   //parts_init();
   flow_init();
 
-  // Messy hack for taking advantage of CUDA_VISIBLE_DEVICES in SLURM
-  //dev_start = read_devices();
-
-  // Allocate device memory
-  //cuda_dev_malloc();
-  //cuda_dom_push(); 
-  //cuda_part_push();
-  //cuda_part_pull();
-
   //before time iteration, malloc memory
-  malloc_3d();
+  malloc_dataproc();
   // Generate statistics
   for (tt = 0; tt < nFiles; tt++) {
     // Read in new data and push to device
     cgns_fill_flow();
+
     // subtract the mean velocity in z direction
-    for (int i = 0; i < dom.Gcc.s3; i++) {
+    /*for (int i = 0; i < dom.Gcc.s3; i++) {
       wf[i] = wf[i] - 75.0;
-    }
+    }*/
     calculate_gradient();
+
+    vorticity();
     //analyze_3d("3d_data.dat");  
     analyze_2d("2d_data");
     printf("data processing %d is finished!\n", tt);
   }
+  // calculate the pdf scalar in one plane
+  analyze_pdf_2d(200, 200, nFiles);
   
   //free memory
-  free_3d();
+  free_dataproc();  
   printf("finish time iteration!\n");
-
-  // write phaseAvereaged to file
-  //write_part_data();
-   
+ 
   // Free and exit
   free_flow_vars();
   //free_part_vars();
-  //cuda_dev_free();
   return EXIT_SUCCESS;
 }
 

@@ -667,7 +667,6 @@ void cgns_fill_flow(void)
   sprintf(buf, "%s/%s/%s", ROOT_DIR, OUTPUT_DIR, flowFiles[flowFileMap[tt]]);
   int fn;
   cg_open(buf, CG_MODE_READ, &fn);
-  
   // Set base, zone, and solutions index numbers
   int bn = 1;
   int zn = 1;

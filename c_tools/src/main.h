@@ -11,8 +11,9 @@
 #include <unistd.h>
 
 #include "cgns_reader.h"
-#include "dataproc_3d.h"
-#include "dataproc_2d.h"
+#include "dataproc.h"
+#include "3d.h"
+#include "2d.h"
 // #Defines
 #define FILE_NAME_SIZE 256
 #define CHAR_BUF_SIZE 256
