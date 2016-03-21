@@ -33,6 +33,7 @@ extern double *wz;
 /**** FUNCTIONS ****/
 
 void analyze_3d(char *name);
+void analyze_pdf_3d(int M, int Ns, int Ne);
 
 #endif
 

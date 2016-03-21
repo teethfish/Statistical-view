@@ -25,6 +25,9 @@ double *wz;
 min_max_struct *g_u;
 min_max_struct *g_v;
 min_max_struct *g_w;
+min_max_struct *g_wx;
+min_max_struct *g_wy;
+min_max_struct *g_wz;
 
 void malloc_dataproc(void)
 {
@@ -43,15 +46,14 @@ void malloc_dataproc(void)
   wy = (double*) malloc(dom.Gcc.s3 * sizeof(double));
   wz = (double*) malloc(dom.Gcc.s3 * sizeof(double));
 
-  for (int i = 0; i < dom.Gcc.s3; i++) {
-    fux[i] = 0.0;
-    fuy[i] = 0.0;
-  }
-
   // min and max value on each plane
   g_u = (min_max_struct*) malloc(layer * sizeof(min_max_struct));
   g_v = (min_max_struct*) malloc(layer * sizeof(min_max_struct));
   g_w = (min_max_struct*) malloc(layer * sizeof(min_max_struct));
+  g_wx = (min_max_struct*) malloc(layer * sizeof(min_max_struct));
+  g_wy = (min_max_struct*) malloc(layer * sizeof(min_max_struct));
+  g_wz = (min_max_struct*) malloc(layer * sizeof(min_max_struct));
+
 
   for (int k = 0; k < layer; k++) {
     g_u[k].min = 0.0;
@@ -60,6 +62,12 @@ void malloc_dataproc(void)
     g_v[k].max = 0.0;
     g_w[k].min = 0.0;
     g_w[k].max = 0.0;
+    g_wx[k].min = 0.0;
+    g_wx[k].max = 0.0;
+    g_wy[k].min = 0.0;
+    g_wy[k].max = 0.0;
+    g_wz[k].min = 0.0;
+    g_wz[k].max = 0.0;
   }
 
 }
@@ -83,6 +91,9 @@ void free_dataproc(void)
   free(g_u);
   free(g_v);
   free(g_w);
+  free(g_wx);
+  free(g_wy);
+  free(g_wz);
 }
 
 void calculate_gradient(void)

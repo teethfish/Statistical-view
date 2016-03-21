@@ -43,16 +43,17 @@ int main(int argc, char *argv[])
     /*for (int i = 0; i < dom.Gcc.s3; i++) {
       wf[i] = wf[i] - 75.0;
     }*/
+    
     calculate_gradient();
-
     vorticity();
-    //analyze_3d("3d_data.dat");  
-    analyze_2d("2d_data");
+    analyze_3d("3d_data.dat");  
+    //analyze_2d("2d_data");
     printf("data processing %d is finished!\n", tt);
   }
   // calculate the pdf scalar in one plane
-  analyze_pdf_2d(200, 200, nFiles);
-  
+  //analyze_pdf_2d(500, 0, nFiles);
+  analyze_pdf_3d(200, 500, nFiles);
+
   //free memory
   free_dataproc();  
   printf("finish time iteration!\n");

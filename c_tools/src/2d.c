@@ -22,10 +22,7 @@ double *wx_2d;
 double *wy_2d;
 double *wz_2d;
 double *dissipation;
-/*min_max_struct *g_u;
-min_max_struct *g_v;
-min_max_struct *g_w;
-*/
+
 /*****FUNCTIONS********/
 void malloc_2d(void);
 
@@ -88,30 +85,6 @@ void malloc_2d(void)
   dissipation = (double*) malloc(layer * sizeof(double)); 
 }
 
-/*void malloc_2d_global(void)
-{
-  // min and max value on each plane
-  g_u = (min_max_struct*) malloc(layer * sizeof(min_max_struct));
-  g_v = (min_max_struct*) malloc(layer * sizeof(min_max_struct));
-  g_w = (min_max_struct*) malloc(layer * sizeof(min_max_struct));
-
-  for (int k = 0; k < layer; k++) {
-    g_u[k].min = 0.0;
-    g_u[k].max = 0.0;
-    g_v[k].min = 0.0;
-    g_v[k].max = 0.0;
-    g_w[k].min = 0.0;
-    g_w[k].max = 0.0;
-  }
-}*/
-
-/*void free_2d_global(void)
-{
-  free(g_u);
-  free(g_v);
-  free(g_w);
-}*/
-
 void free_2d(void)
 {
 
@@ -128,6 +101,9 @@ void free_2d(void)
   free(u_2d);
   free(v_2d);
   free(w_2d);
+  free(wx_2d);
+  free(wy_2d);
+  free(wz_2d);
 }  
 
 void analyze_2d(char *name)
@@ -135,15 +111,19 @@ void analyze_2d(char *name)
   malloc_2d();
   // interpolate velocity from 3d to 2d
   extract_surface_z(zpos, layer, uf, vf, wf, u_2d, v_2d, w_2d);
+  extract_surface_z(zpos, layer, wx, wy, wz, wx_2d, wy_2d, wz_2d);
   // store the min and max value on each plane
   store_min_max(dom.Gcc.s2, u_2d, g_u);
   store_min_max(dom.Gcc.s2, v_2d, g_v);
   store_min_max(dom.Gcc.s2, w_2d, g_w);  
 
+  store_min_max(dom.Gcc.s2, wx_2d, g_wx);
+  store_min_max(dom.Gcc.s2, wy_2d, g_wy);
+  store_min_max(dom.Gcc.s2, wz_2d, g_wz);
   // calculate mean and rms velocity on each plane
-  mean_vel_surface(layer, u_2d, v_2d, w_2d);
+  //mean_vel_surface(layer, u_2d, v_2d, w_2d);
 
-  dissipation_2d(nu);
+  //dissipation_2d(nu);
 
   record_2d(name);
 
@@ -275,6 +255,12 @@ void analyze_pdf_2d(int M, int Ns, int Ne)
   r_u = (double*) malloc(M *layer * sizeof(double));
   r_v = (double*) malloc(M *layer * sizeof(double));
   r_w = (double*) malloc(M *layer * sizeof(double));
+  double *r_wx;
+  double *r_wy;
+  double *r_wz;
+  r_wx = (double*) malloc(M *layer * sizeof(double));
+  r_wy = (double*) malloc(M *layer * sizeof(double));
+  r_wz = (double*) malloc(M *layer * sizeof(double)); 
 
   double *pdf_u;
   double *pdf_v;
@@ -282,12 +268,21 @@ void analyze_pdf_2d(int M, int Ns, int Ne)
   pdf_u = (double*) malloc(M * layer * sizeof(double));
   pdf_v = (double*) malloc(M * layer * sizeof(double));
   pdf_w = (double*) malloc(M * layer * sizeof(double));  
+  double *pdf_wx;
+  double *pdf_wy;
+  double *pdf_wz;
+  pdf_wx = (double*) malloc(M * layer * sizeof(double));
+  pdf_wy = (double*) malloc(M * layer * sizeof(double));
+  pdf_wz = (double*) malloc(M * layer * sizeof(double));
 
   //initialize the pdf array to be zeros
   for (int i = 0; i < M*layer; i++) {
     pdf_u[i] = 0.0;
     pdf_v[i] = 0.0;
     pdf_w[i] = 0.0;
+    pdf_wx[i] = 0.0;
+    pdf_wy[i] = 0.0;
+    pdf_wz[i] = 0.0;
   }
 
   //flow_init();    
@@ -297,19 +292,32 @@ void analyze_pdf_2d(int M, int Ns, int Ne)
     tt = i;
     cgns_fill_flow();
 
+    /*for (int i = 0; i < dom.Gcc.s3; i++) {
+      wf[i] = wf[i] - 75.0;
+    }*/
+    calculate_gradient();
+    vorticity();
+
     // get plane value 
     extract_surface_z(zpos, layer, uf, vf, wf, u_2d, v_2d, w_2d);
+    extract_surface_z(zpos, layer, wx, wy, wz, wx_2d, wy_2d, wz_2d);
     // generate pdf for a scarlar in each plane
 
     compute_pdf(u_2d, M, g_u, r_u, pdf_u, divider); 
     compute_pdf(v_2d, M, g_v, r_v, pdf_v, divider); 
     compute_pdf(w_2d, M, g_w, r_w, pdf_w, divider); 
+    compute_pdf(wx_2d, M, g_wx, r_wx, pdf_wx, divider);
+    compute_pdf(wy_2d, M, g_wy, r_wy, pdf_wy, divider);
+    compute_pdf(wz_2d, M, g_wz, r_wz, pdf_wz, divider);
   }
   printf("finished time iteration for pdf\n"); 
   // write results back to the file
   record_2d_scalar("pdf_u.dat",layer, M, r_u, pdf_u);
   record_2d_scalar("pdf_v.dat",layer, M, r_v, pdf_v);
   record_2d_scalar("pdf_w.dat",layer, M, r_w, pdf_w);
+  record_2d_scalar("pdf_wx.dat",layer, M, r_wx, pdf_wx);
+  record_2d_scalar("pdf_wy.dat",layer, M, r_wy, pdf_wy);
+  record_2d_scalar("pdf_wz.dat",layer, M, r_wz, pdf_wz);
  
   free(r_u);
   free(r_v);
@@ -317,6 +325,13 @@ void analyze_pdf_2d(int M, int Ns, int Ne)
   free(pdf_u);
   free(pdf_v);
   free(pdf_w);
+  free(r_wx);
+  free(r_wy);
+  free(r_wz);
+  free(pdf_wx);
+  free(pdf_wy);
+  free(pdf_wz);
+
   free_2d(); 
 }
 

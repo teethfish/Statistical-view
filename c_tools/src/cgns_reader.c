@@ -689,6 +689,17 @@ void cgns_fill_flow(void)
   cg_field_read(fn,bn,zn,sn, "Phase", Integer, range_min, range_max, phase);
 
   cg_close(fn);
+
+  // whn only gets one particle, so the phase is -1 or 0
+  // set velocity wthin the particle to be zero
+  for (int i = 0; i < dom.Gcc.s3; i++) {
+    uf[i] = uf[i]*phase[i];
+    vf[i] = vf[i]*phase[i];
+    wf[i] = wf[i]*phase[i];
+    uf[i] = -uf[i];
+    vf[i] = -vf[i];
+    wf[i] = -wf[i];
+  }
 }
 
 // Show domain

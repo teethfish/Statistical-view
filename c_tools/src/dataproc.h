@@ -37,6 +37,9 @@ extern double *wz;
 extern min_max_struct *g_u;
 extern min_max_struct *g_v;
 extern min_max_struct *g_w;
+extern min_max_struct *g_wx;
+extern min_max_struct *g_wy;
+extern min_max_struct *g_wz;
 
 /**** FUNCTIONS ****/
 void malloc_dataproc(void);
