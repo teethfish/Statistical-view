@@ -11,6 +11,8 @@
 #include "3d.h"
 
 /**** FUNCTIONS ****/
+void dissipation_in_cage(double nu);
+
 void dissipation_3d(double nu);
 
 void mean_velocity(void);
@@ -28,6 +30,11 @@ void phase_change(void);
 void store_min_max_3d(double *f, min_max_struct *g_f);
 
 void record_3d_scalar(char *name, int N, double *r, double *f);
+
+void record_evolution_3d_init(char *name, int N);
+
+void record_evolution_3d(char *name, int N, double *f);
+
 /**** VARIABLES ****/
 double dissipation;
 double u_mean;
@@ -39,7 +46,9 @@ double w_rms;
  
 void analyze_3d(char *name)
 {
-  dissipation_3d(nu);
+  //dissipation_3d(nu);
+  dissipation_in_cage(nu);
+
   printf("dissipation is %f\n", dissipation);
 
   //calculate mean velocity in the entire domain
@@ -196,7 +205,92 @@ void store_min_max_3d(double *f, min_max_struct *g_f)
   tmp = get_max(f, dom.Gcc.s3);
   if(tmp > g_f[0].max) g_f[0].max = tmp;
 }
-    
+
+void dissipation_in_cage(double nu)
+{
+  double *tmp1;
+  tmp1 = (double*) malloc(dom.Gcc.s3 * sizeof(double));
+  double *tmp2;
+  tmp2 = (double*) malloc(dom.Gcc.s3 * sizeof(double));
+
+  multiply(dom.Gcc.s3, fux, fux, tmp1);
+  multiply(dom.Gcc.s3, fvx, fvx, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  multiply(dom.Gcc.s3, fwx, fwx, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  multiply(dom.Gcc.s3, fuy, fuy, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  multiply(dom.Gcc.s3, fvy, fvy, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  multiply(dom.Gcc.s3, fwy, fwy, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  multiply(dom.Gcc.s3, fuz, fuz, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  multiply(dom.Gcc.s3, fvz, fvz, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  // tmp1 store the dissipation rate in each points in the domain
+  multiply(dom.Gcc.s3, fwz, fwz, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  // the overall dissipation rate
+  dissipation = mean(dom.Gcc.s3, tmp1);
+  dissipation *= nu;
+
+  // calculate dissipation in the cage for each particle 
+  double *dissipation_each_part;
+  dissipation_each_part = (double*) malloc(nparts * sizeof(double));
+  int *ncells;
+  ncells = (int *) malloc(nparts * sizeof(int));
+ 
+  double xx, yy, zz, d;
+  for (int i = 0; i < nparts; i++) {
+    dissipation_each_part[i] = 0.0;
+    ncells[i] = 0;
+  }
+
+  for (int i = 0; i < dom.Gcc.in; i++) {
+    xx = dom.xs + (i + 0.5)*dom.dx;
+    for (int j = 0; j < dom.Gcc.jn; j++) {
+      yy = dom.ys + (j + 0.5)*dom.dy;
+      //printf("yy is %f\n", yy);
+      for (int k = 0; k < dom.Gcc.kn; k++) {
+        zz = dom.zs + (k + 0.5)*dom.dz; 
+        for (int p = 0; p < nparts; p++) {
+          d = (xx - parts[p].x)*(xx - parts[p].x) + (yy - parts[p].y)*(yy - parts[p].y) + (zz - parts[p].z)*(zz - parts[p].z);
+          //printf("i, j, k p is %d, %d, %d %d\n", i, j, k, p);
+          if(d <= 1.15*1.15*parts[p].r*parts[p].r && d >= parts[p].r*parts[p].r) {    
+            dissipation_each_part[p] += tmp1[i + j*dom.Gcc.s1 + k*dom.Gcc.s2];
+            ncells[p] += 1;            
+          }
+        }
+      }
+    }
+  } 
+   
+  double *dissipation_total;
+  dissipation_total = (double*) malloc(1 * sizeof(double));
+  for (int i = 0; i < nparts; i++) {
+    dissipation_each_part[i] *= nu;
+    dissipation_each_part[i] = dissipation_each_part[i] / (double)ncells[i];
+    dissipation_total[0] += dissipation_each_part[i]/(double) nparts;
+  }
+  record_evolution_3d("dissipation_each_particle", nparts, dissipation_each_part);
+  record_evolution_3d("dissipation_total_particle", 1, dissipation_total);  
+   
+ 
+  free(tmp1);
+  free(tmp2);
+  free(dissipation_each_part);
+  free(dissipation_total);
+
+}   
 void dissipation_3d(double nu)
 {
   dissipation = 0.0;
@@ -318,6 +412,49 @@ void record_3d_scalar(char *name, int N, double *r, double *f)
     fprintf(rec, "%-15f", f[i]);
     fprintf(rec, "\n");
   }
+}
+
+void record_evolution_3d_init(char *name, int N)
+{
+  // create the file for each surface
+  char path[FILE_NAME_SIZE] = "";
+  sprintf(path, "%s/dataproc/%s", ROOT_DIR, name);
+  FILE *rec = fopen(path, "w");
+  if(rec == NULL) {
+    fprintf(stderr, "Could not open file %s\n", name);
+    exit(EXIT_FAILURE);
+  }
+  
+  fprintf(rec, "%-15s", "time");
+  for (int i = 0; i < N; i++) {
+    fprintf(rec, "%s_%-10d ", "part",i);
+  } 
+
+  // close the file
+  fclose(rec);
+}  
+
+void record_evolution_3d(char *name, int N, double *f)
+{
+  // open the file
+  char path[FILE_NAME_SIZE] = "";
+  sprintf(path, "%s/dataproc/%s", ROOT_DIR, name);
+  FILE *rec = fopen(path, "r+");
+  if(rec == NULL) {
+    record_evolution_3d_init(name, N);
+    rec = fopen(path, "r+");
+  }
+
+  // move to the end of the file
+  fseek(rec, 0, SEEK_END);
+
+  fprintf(rec, "\n");
+  fprintf(rec, "%-15d", tt);
+  for (int i = 0; i < N; i++) {
+    fprintf(rec, "%-15f ", f[i]);
+  }
+  // close the file
+  fclose(rec);
 }
 
 void record_3d(char *name)
