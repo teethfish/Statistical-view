@@ -16,7 +16,7 @@ void gradient_x(double *gradx, double *f, double dx, int in, int jn, int kn)
   for (int i = 1; i < in-1; i++) {
     for (int j = 0; j < jn; j++) {
       for (int k = 0; k < kn; k++) {
-	 gradx[i+j*s1+k*s2] = (f[i+j*s1+k*s2+1] - f[i+j*s1+k*s2-1])/dx/2.0; 	
+    	 gradx[i+j*s1+k*s2] = (f[i+j*s1+k*s2+1] - f[i+j*s1+k*s2-1])/dx/2.0; 	
 	}
     }
   }
@@ -35,7 +35,7 @@ void gradient_y(double *grady, double *f, double dy, int in, int jn, int kn)
   for (int i = 0; i < in; i++) {
     for (int j = 1; j < jn - 1; j++) {
       for (int k = 0; k < kn; k++) {
-	grady[i+j*s1+k*s2] = (f[i+(j+1)*s1+k*s2] - f[i+(j-1)*s1+k*s2])/dy/2.0;
+	      grady[i+j*s1+k*s2] = (f[i+(j+1)*s1+k*s2] - f[i+(j-1)*s1+k*s2])/dy/2.0;
       }
     }
   }

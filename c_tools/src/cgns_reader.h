@@ -122,7 +122,7 @@ void merge(double *A, int n, int m, int *A2);
 void create_output_dir(void);
 
 // Read nparts
-void cgns_read_nparts(void);
+int cgns_read_nparts(void);
 
 // initialize part_struct and flow vars
 void parts_init(void);
