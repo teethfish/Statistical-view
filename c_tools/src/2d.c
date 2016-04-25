@@ -169,9 +169,9 @@ void extract_surface_z(double *zpos, int layer, double *uf, double *vf, double *
     //interpolate 3d data to 2d plane
     for (int i = 0; i < dom.Gcc.in; i++) {
       for (int j = 0; j < dom.Gcc.jn; j++) {
-	u_2d[i+j*dom.Gcc.s1+k*dom.Gcc.s2] = uf[i+j*dom.Gcc.s1+L*dom.Gcc.s2] + (uf[i+j*dom.Gcc.s1+H*dom.Gcc.s2] - uf[i+j*dom.Gcc.s1+L*dom.Gcc.s2])*zpos_c;
-	v_2d[i+j*dom.Gcc.s1+k*dom.Gcc.s2] = vf[i+j*dom.Gcc.s1+L*dom.Gcc.s2] + (vf[i+j*dom.Gcc.s1+H*dom.Gcc.s2] - vf[i+j*dom.Gcc.s1+L*dom.Gcc.s2])*zpos_c;
- 	w_2d[i+j*dom.Gcc.s1+k*dom.Gcc.s2] = wf[i+j*dom.Gcc.s1+L*dom.Gcc.s2] + (wf[i+j*dom.Gcc.s1+H*dom.Gcc.s2] - wf[i+j*dom.Gcc.s1+L*dom.Gcc.s2])*zpos_c;      
+	      u_2d[i+j*dom.Gcc.s1+k*dom.Gcc.s2] = uf[i+j*dom.Gcc.s1+(L-1)*dom.Gcc.s2] + (uf[i+j*dom.Gcc.s1+(H-1)*dom.Gcc.s2] - uf[i+j*dom.Gcc.s1+(L-1)*dom.Gcc.s2])*zpos_c;
+	      v_2d[i+j*dom.Gcc.s1+k*dom.Gcc.s2] = vf[i+j*dom.Gcc.s1+(L-1)*dom.Gcc.s2] + (vf[i+j*dom.Gcc.s1+(H-1)*dom.Gcc.s2] - vf[i+j*dom.Gcc.s1+(L-1)*dom.Gcc.s2])*zpos_c;
+ 	      w_2d[i+j*dom.Gcc.s1+k*dom.Gcc.s2] = wf[i+j*dom.Gcc.s1+(L-1)*dom.Gcc.s2] + (wf[i+j*dom.Gcc.s1+(H-1)*dom.Gcc.s2] - wf[i+j*dom.Gcc.s1+(L-1)*dom.Gcc.s2])*zpos_c;      
       }
     }
   }
