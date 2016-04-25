@@ -22,6 +22,7 @@ double *fwz;
 double *wx;
 double *wy;
 double *wz;
+double *dissipation_3d;
 min_max_struct *g_u;
 min_max_struct *g_v;
 min_max_struct *g_w;
@@ -45,6 +46,8 @@ void malloc_dataproc(void)
   wx = (double*) malloc(dom.Gcc.s3 * sizeof(double));
   wy = (double*) malloc(dom.Gcc.s3 * sizeof(double));
   wz = (double*) malloc(dom.Gcc.s3 * sizeof(double));
+
+  dissipation_3d = (double*) malloc(dom.Gcc.s3 * sizeof(double));
 
   // min and max value on each plane
   g_u = (min_max_struct*) malloc(layer * sizeof(min_max_struct));
@@ -88,6 +91,8 @@ void free_dataproc(void)
   free(wy);
   free(wz);
 
+  free(dissipation_3d);
+
   free(g_u);
   free(g_v);
   free(g_w);
@@ -107,6 +112,7 @@ void calculate_gradient(void)
   gradient_z(fuz, uf, dom.dz, dom.Gcc.in, dom.Gcc.jn, dom.Gcc.kn);
   gradient_z(fvz, vf, dom.dz, dom.Gcc.in, dom.Gcc.jn, dom.Gcc.kn);
   gradient_z(fwz, wf, dom.dz, dom.Gcc.in, dom.Gcc.jn, dom.Gcc.kn);
+
 }
 
 void vorticity(void)
@@ -114,6 +120,70 @@ void vorticity(void)
   sub(dom.Gcc.s3, fwy, fvz, wx);
   sub(dom.Gcc.s3, fuz, fwx, wy);
   sub(dom.Gcc.s3, fvx, fuy, wz);
+}
+
+void get_dissipation(double nu)
+{
+  double *tmp1;
+  tmp1 = (double*) malloc(dom.Gcc.s3 * sizeof(double));
+  double *tmp2;
+  tmp2 = (double*) malloc(dom.Gcc.s3 * sizeof(double));
+
+  // 2(dudx^2 + dvdy^2 + dwdz^2)
+  multiply(dom.Gcc.s3, fux, fux, tmp1);
+  multiply(dom.Gcc.s3, fvy, fvy, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  multiply(dom.Gcc.s3, fwz, fwz, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  for (int i = 0; i < dom.Gcc.s3; i++) {
+    tmp2[i] = 2.0;
+  }
+  multiply(dom.Gcc.s3, tmp1, tmp2, tmp1);
+ 
+  // dudy^2 + dvdx^2 + 2dudy*dvdx
+  multiply(dom.Gcc.s3, fuy, fuy, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  multiply(dom.Gcc.s3, fvx, fvx, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  multiply(dom.Gcc.s3, fuy, fvx, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+  multiply(dom.Gcc.s3, fuy, fvx, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  // dudz^2 + dwdx^2 + 2*dudz*dwdx
+  multiply(dom.Gcc.s3, fuz, fuz, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  multiply(dom.Gcc.s3, fwx, fwx, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  multiply(dom.Gcc.s3, fuz, fwx, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+  multiply(dom.Gcc.s3, fuz, fwx, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  // dvdz^2 + dwdy^2 + 2dvdz*dwdy
+  multiply(dom.Gcc.s3, fvz, fvz, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  multiply(dom.Gcc.s3, fwy, fwy, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  multiply(dom.Gcc.s3, fvz, fwy, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+  multiply(dom.Gcc.s3, fvz, fwy, tmp2);
+  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
+
+  for (int i = 0; i < dom.Gcc.s3; i++) {
+    dissipation_3d[i] = tmp1[i]*nu;
+  }
+
+  free(tmp1);
+  free(tmp2);
 }
 
 

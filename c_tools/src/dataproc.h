@@ -33,6 +33,7 @@ extern double *fwz;
 extern double *wx;
 extern double *wy;
 extern double *wz;
+extern double *dissipation_3d;
 
 extern min_max_struct *g_u;
 extern min_max_struct *g_v;
@@ -49,5 +50,7 @@ void free_dataproc(void);
 void calculate_gradient(void);
 
 void vorticity(void);
+
+void get_dissipation(double nu);
 
 #endif

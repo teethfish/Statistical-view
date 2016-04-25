@@ -21,8 +21,10 @@ int main(int argc, char *argv[])
   init_flow_files();
   // Create output directory
   //create_output_dir();
+  
   // Get number of particles
   nparts = cgns_read_nparts();
+  //printf("nparts is %d\n", nparts);
   // Initialize domain and flow arrays
   domain_init();
   // Initialize partstruct and flow vars
@@ -39,13 +41,15 @@ int main(int argc, char *argv[])
  
     calculate_gradient();
     vorticity();
+    get_dissipation(nu);
+
     analyze_3d("3d_data.dat");  
     //analyze_2d("2d_data");
     printf("data processing %d is finished!\n", tt);
   }
   // calculate the pdf scalar in one plane
   //analyze_pdf_2d(500, 0, nFiles);
-  //analyze_pdf_3d(200, 500, nFiles);
+  //analyze_pdf_3d(200, 0, nFiles);
 
   //free memory
   free_dataproc();  
@@ -53,7 +57,7 @@ int main(int argc, char *argv[])
  
   // Free and exit
   free_flow_vars();
-  //free_part_vars();
+  free_part_vars();
   return EXIT_SUCCESS;
 }
 

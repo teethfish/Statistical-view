@@ -17,15 +17,24 @@ void gradient_x(double *gradx, double *f, double dx, int in, int jn, int kn)
     for (int j = 0; j < jn; j++) {
       for (int k = 0; k < kn; k++) {
     	 gradx[i+j*s1+k*s2] = (f[i+j*s1+k*s2+1] - f[i+j*s1+k*s2-1])/dx/2.0; 	
-	}
+    	}
     }
   }
+/*  // second order one side interpolation
   for (int j = 0; j < jn; j++) {
     for (int k = 0; k < kn; k++) {
       gradx[j*s1+k*s2] = 0.5*(-3.*f[j*s1+k*s2] + 4.*f[1+j*s1+k*s2] - f[2+j*s1+k*s2])/dx;
       gradx[in-1 + j*s1+k*s2] = 0.5*(3.*f[in-1 + j*s1+k*s2] - 4.*f[in-2+j*s1+k*s2] + f[in-3 + j*s1+k*s2])/dx; 
     }
   }
+*/
+  // first order one side interpolation
+  for(int j = 0; j < jn; j++){
+    for(int k = 0; k < kn; k++){
+      gradx[j*s1+k*s2] = (f[1+j*s1+k*s2]-f[j*s1+k*s2])/dx;
+      gradx[in-1 + j*s1+k*s2] = (f[in-1 + j*s1+k*s2] - f[in-2+j*s1+k*s2])/dx;    
+    }
+  }  
 }
 
 void gradient_y(double *grady, double *f, double dy, int in, int jn, int kn)
@@ -39,11 +48,18 @@ void gradient_y(double *grady, double *f, double dy, int in, int jn, int kn)
       }
     }
   }
- 
+/* 
  for (int i = 0; i < in; i++) {
     for (int k = 0; k < kn; k++) {
       grady[i+k*s2] = 0.5*(-3.*f[i+k*s2] + 4.*f[i+s1+k*s2] - f[i+2*s1+k*s2])/dy;    
       grady[i+(jn-1)*s1+k*s2] = 0.5*(3.*f[i+(jn-1)*s1+k*s2] - 4.*f[i+(jn-2)*s1+k*s2] + f[i+(jn-3)*s1+k*s2])/dy;
+    }
+  }
+*/
+ for(int i = 0; i < in; i++){
+    for(int k = 0; k < kn; k++){
+      grady[i+k*s2] = (f[i+s1+k*s2] - f[i+k*s2])/dy;    
+      grady[i+(jn-1)*s1+k*s2] = (f[i+(jn-1)*s1+k*s2] - f[i+(jn-2)*s1+k*s2])/dy;
     }
   }
 } 
@@ -55,17 +71,26 @@ void gradient_z(double *gradz, double *f, double dz, int in, int jn, int kn)
   for (int i = 0; i < in; i++) {
     for (int j = 0; j < jn; j++) {
       for (int k = 1; k < kn-1; k++) {
-	gradz[i+j*s1+k*s2] = (f[i+j*s1+(k+1)*s2] - f[i+j*s1+(k-1)*s2])/dz/2.0;
+       	gradz[i+j*s1+k*s2] = (f[i+j*s1+(k+1)*s2] - f[i+j*s1+(k-1)*s2])/dz/2.0;
       }
     }
   }
 
-  for (int i = 0; i < in; i++) {
+/*  for (int i = 0; i < in; i++) {
     for (int j = 0; j < jn; j++) {
       gradz[i+j*s1] = 0.5*(-3.0*f[i+j*s1] + 4.*f[i+j*s1+s2] - f[i+j*s1+2*s2])/dz;
       gradz[i+j*s1+(kn-1)*s2] = 0.5*(3.0*f[i+j*s1+(kn-1)*s2] -4.*f[i+j*s1+(kn-2)*s2] + 3.*f[i+j*s1+(kn-3)*s2])/dz;
     }
   }
+*/
+  for(int i = 0; i < in; i++){
+    for(int j = 0; j < jn; j++){
+       gradz[i+j*s1] = (f[i+j*s1+s2] - f[i+j*s1])/dz;
+      gradz[i+j*s1+(kn-1)*s2] = (f[i+j*s1+(kn-1)*s2] - f[i+j*s1+(kn-2)*s2])/dz;
+    }
+  }
+
+
 }
 /*
 void vorticity(double *wx, double *wy, double *wz)

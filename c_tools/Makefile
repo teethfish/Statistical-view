@@ -1,6 +1,6 @@
 ## DEPENDENCIES ##
-HDF5_DIR = /opt/hdf5
-CGNS_DIR = /opt/cgns
+HDF5_DIR = /home-4/ywang221@jhu.edu/deps/hdf5
+CGNS_DIR = /home-4/ywang221@jhu.edu/deps/cgns
 
 ## COMPILERS
 GCC = gcc

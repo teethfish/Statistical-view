@@ -44,6 +44,19 @@ void record_2d(char *name);
 void compute_pdf(double *f, int M, min_max_struct *g_f, double *r_f, double *pdf_f, double divider);
 
 void record_2d_scalar(char *name, int layer, int M, double *r, double *f);
+
+void variable_in_cage(double *fx, double *fy, double *fz, double fpos);
+/*
+ * calulate mean value of a variable within a particle volume
+ * fx, fy, fz is the variables waiting to be calculated
+ * fpos is the plane where sits the particle center
+ */
+
+void record_variable_in_cage_init(char *name, int N);
+
+void record_variable_in_cage(char *name, int N, double *f);
+
+
 /*** VARIABLES *******/
 /*double *u_mean;
 double *v_mean;
@@ -109,9 +122,12 @@ void free_2d(void)
 void analyze_2d(char *name)
 {
   malloc_2d();
+
+/*
   // interpolate velocity from 3d to 2d
   extract_surface_z(zpos, layer, uf, vf, wf, u_2d, v_2d, w_2d);
   extract_surface_z(zpos, layer, wx, wy, wz, wx_2d, wy_2d, wz_2d);
+
   // store the min and max value on each plane
   store_min_max(dom.Gcc.s2, u_2d, g_u);
   store_min_max(dom.Gcc.s2, v_2d, g_v);
@@ -120,12 +136,16 @@ void analyze_2d(char *name)
   store_min_max(dom.Gcc.s2, wx_2d, g_wx);
   store_min_max(dom.Gcc.s2, wy_2d, g_wy);
   store_min_max(dom.Gcc.s2, wz_2d, g_wz);
+*/
+
+  variable_in_cage(wx, wy, wz, zpos[0]);
+
   // calculate mean and rms velocity on each plane
   //mean_vel_surface(layer, u_2d, v_2d, w_2d);
 
   //dissipation_2d(nu);
 
-  record_2d(name);
+  //record_2d(name);
 
   free_2d();
 } 
@@ -244,6 +264,135 @@ void dissipation_2d(double nu)
   free(tmp2);
   free(tmp);
 }   
+
+void variable_in_cage(double *fx, double *fy, double *fz, double fpos)
+{
+
+  int Ncage = 49;
+  double a = 1.0;
+  double *cage_x;
+  cage_x = (double*) malloc(Ncage * sizeof(double));
+  double *cage_y;
+  cage_y = (double*) malloc(Ncage * sizeof(double));
+  double *cage_z;
+  cage_z = (double*) malloc(Ncage * sizeof(double));
+
+  double *fx_cage;
+  fx_cage = (double*) malloc(Ncage * sizeof(double));
+  double *fy_cage;
+  fy_cage = (double*) malloc(Ncage * sizeof(double));
+  double *fz_cage;
+  fz_cage = (double*) malloc(Ncage * sizeof(double));
+
+  int *ncell;
+  ncell = (int*) malloc(Ncage * sizeof(int));
+
+
+  // thus the one on the center is cage[i=3,j=3], which is p = 24
+  for (int i = 0; i < 7; i++) {
+    for (int j = 0; j < 7; j++) {
+      cage_x[i+j*7] = dom.xs + (i * 2 + 1) * a;
+      cage_y[i+j*7] = dom.ys + (j * 2 + 1) * a;
+      cage_z[i+j*7] = fpos;
+      fx_cage[i+j*7] = 0.0;
+      fy_cage[i+j*7] = 0.0;
+      fz_cage[i+j*7] = 0.0;
+      ncell[i+j*7] = 0;
+    }
+  }
+
+
+  int zs = (fpos - dom.zs - dom.dz*0.5)/dom.dz - a/dom.dz - 2;
+  int ze = zs + 2 + a*2/dom.dz + 4;
+
+  double x,y,z;
+  for (int i = 0; i < dom.Gcc.in; i++) {
+    x = dom.xs + (i + 0.5)*dom.dx;
+    for (int j = 0; j < dom.Gcc.jn; j++) {
+      y = dom.ys + (j + 0.5)*dom.dy;
+      for (int k = zs; k < ze; k++) {
+        z = dom.zs + (k + 0.5)*dom.dz;
+        for (int p = 0; p < Ncage; p++) {
+          int check = (x - cage_x[p])*(x - cage_x[p]) + (y-cage_y[p])*(y-cage_y[p]) + (z-cage_z[p])*(z-cage_z[p]) - a*a < 0;
+          fx_cage[p] += check * fx[i+j*dom.Gcc.s1+k*dom.Gcc.s2];
+          fy_cage[p] += check * fy[i+j*dom.Gcc.s1+k*dom.Gcc.s2];
+          fz_cage[p] += check * fz[i+j*dom.Gcc.s1+k*dom.Gcc.s2];
+          ncell[p] += check;
+        }
+      }
+    }
+  }
+  for (int p = 0; p < Ncage; p++) {
+    fx_cage[p] = fx_cage[p]/ncell[p];
+    fy_cage[p] = fy_cage[p]/ncell[p];
+    fz_cage[p] = fz_cage[p]/ncell[p];
+  }
+
+  for (int p = 0; p < Ncage; p++) {
+    char name[FILE_NAME_SIZE] = "";
+    sprintf(name, "wx_cage_%d", p);
+    record_variable_in_cage(name, 1, &fx_cage[p]);
+    sprintf(name, "wy_cage_%d", p);
+    record_variable_in_cage(name, 1, &fy_cage[p]);
+    sprintf(name, "wz_cage_%d", p);
+    record_variable_in_cage(name, 1, &fz_cage[p]); 
+  }
+
+  free(cage_x);
+  free(cage_y);
+  free(cage_z);
+  free(fx_cage);
+  free(fy_cage);
+  free(fz_cage);
+  free(ncell);
+}
+
+ 
+void record_variable_in_cage_init(char *name, int N)
+{
+
+  char path[FILE_NAME_SIZE] = ""; 
+  sprintf(path, "%s/dataproc/%s", ROOT_DIR, name);
+  FILE *rec = fopen(path, "w");
+  if(rec == NULL) { 
+    fprintf(stderr, "Could not open file %s\n", name);
+    exit(EXIT_FAILURE);
+  }
+  
+  fprintf(rec, "%-15s", "time");
+  for (int i = 0; i < N; i++) {
+    fprintf(rec, "%s_%-10d ", "cage",i);
+  }
+
+  // close the file
+  fclose(rec);
+}  
+
+
+void record_variable_in_cage(char *name, int N, double *f)
+{
+  // open the file
+  char path[FILE_NAME_SIZE] = "";
+  sprintf(path, "%s/dataproc/%s", ROOT_DIR, name);
+  FILE *rec = fopen(path, "r+");
+  if(rec == NULL) {
+    record_variable_in_cage_init(name, N);
+    rec = fopen(path, "r+");
+  }
+
+  // move to the end of the file
+  fseek(rec, 0, SEEK_END);
+
+  fprintf(rec, "\n");
+  fprintf(rec, "%-15d", tt);
+  for (int i = 0; i < N; i++) {
+    fprintf(rec, "%-15f ", f[i]);
+  }
+  // close the file
+  fclose(rec);
+}  
+
+
 
 void analyze_pdf_2d(int M, int Ns, int Ne)
 {
