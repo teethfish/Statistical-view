@@ -83,10 +83,10 @@ void analyze_3d(char *name)
 
   //calculate rms velocity in the entire domain
   rms_velocity();
-  
+  */
   //write output file
   record_3d(name);
-  */
+  
 }
 
 void analyze_pdf_3d(int M, int Ns, int Ne)

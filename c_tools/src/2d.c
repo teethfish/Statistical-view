@@ -9,6 +9,10 @@
 
 #include "main.h"
 #include "2d.h"
+
+
+
+/*** VARIABLES *******/
 double *u_mean;
 double *v_mean;
 double *w_mean;
@@ -18,24 +22,25 @@ double *w_rms;
 double *u_2d;
 double *v_2d;
 double *w_2d;
+double *k_2d;
 double *wx_2d;
 double *wy_2d;
 double *wz_2d;
+double *dissipation_2d;
 double *dissipation;
-
 /*****FUNCTIONS********/
 void malloc_2d(void);
 
 void free_2d(void);
 
-void extract_surface_z(double *zpos, int layer, double *uf, double *vf, double *wf, double *u_2d, double *v_2d, double *w_2d);
+//void extract_surface_z(double *zpos, int layer, double *uf, double *vf, double *wf, double *u_2d, double *v_2d, double *w_2d);
 
 void mean_vel_surface(int layer, double *u_2d, double *v_2d, double *w_2d);
 
 
 void store_min_max(int N, double *f, min_max_struct *g_f);
 
-void dissipation_2d(double nu);
+void mean_dissipation_2d(double nu);
 
 void record_2d_init(char *name);
 
@@ -57,24 +62,63 @@ void record_variable_in_cage_init(char *name, int N);
 void record_variable_in_cage(char *name, int N, double *f);
 
 
-/*** VARIABLES *******/
-/*double *u_mean;
-double *v_mean;
-double *w_mean;
-double *u_rms;
-double *v_rms;
-double *w_rms;
-double *u_2d;
-double *v_2d;
-double *w_2d;
-double *wx_2d;
-double *wy_2d;
-double *wz_2d;
-double *dissipation;
-min_max_struct *g_u;
-min_max_struct *g_v;
-min_max_struct *g_w;
+//void extract_line_data_from_2d(double *f, double *f_cross_vel, double avg_factor);
+/*
+ * extract data on a line from a 2d surface
+ * f is the array to store 2d data, length layer*in*jn
+ * f_cross_vel store the line data from a 2d plane, length in*layer
+ */
+
+//void extract_point_data_from_2d(double *f, double *f_deficit, double avg_factor);
+/*
+ * extract data on a point from 2d surface
+ * f is the array to store 2d data, length layer*in*jn
+ * f_deficit is the array to store point data from a 2d plane, length layer
+ */
+
+void calculate_mean_on_plane(double *f_mean, double *f);
+
+
+void analyze_2d(char *name)
+{ 
+  malloc_2d();
+
+  // interpolate velocity from 3d to 2d
+  extract_surface_z(zpos, layer, uf, vf, wf, u_2d, v_2d, w_2d);
+  extract_surface_z(zpos, layer, wx, wy, wz, wx_2d, wy_2d, wz_2d);
+
+  extract_surface_z(zpos, layer, dissipation_3d, dissipation_3d, dissipation_3d, dissipation_2d, dissipation_2d, dissipation_2d);
+  calculate_mean_on_plane(dissipation, dissipation_2d);
+
+
+  // calculate mean and rms velocity on each plane
+  mean_vel_surface(layer, u_2d, v_2d, w_2d);
+
+  // calculate the mean wake deficit after the sphere
+  extract_point_data_from_2d(u_2d, u_deficit, 1.0/nFiles);
+  extract_point_data_from_2d(v_2d, v_deficit, 1.0/nFiles);
+  extract_point_data_from_2d(w_2d, w_deficit, 1.0/nFiles);
+  extract_line_data_from_2d(dissipation_2d, dissipation_cross_vel, 1.0/nFiles);
+  extract_line_data_from_2d(k_2d, k_cross_vel, 1.0/nFiles); 
+/*
+  // store the min and max value on each plane
+  store_min_max(dom.Gcc.s2, u_2d, g_u);
+  store_min_max(dom.Gcc.s2, v_2d, g_v);
+  store_min_max(dom.Gcc.s2, w_2d, g_w);  
+
+  store_min_max(dom.Gcc.s2, wx_2d, g_wx);
+  store_min_max(dom.Gcc.s2, wy_2d, g_wy);
+  store_min_max(dom.Gcc.s2, wz_2d, g_wz);
+
+  variable_in_cage(wx, wy, wz, zpos[0]);
 */
+
+  //record_2d(name);
+  
+  free_2d();
+}    
+
+
 void malloc_2d(void)
 {
   //value on planes
@@ -85,7 +129,7 @@ void malloc_2d(void)
   wx_2d = (double*) malloc(size * sizeof(double));
   wy_2d = (double*) malloc(size * sizeof(double));
   wz_2d = (double*) malloc(size * sizeof(double));
-
+  k_2d = (double*) malloc(size * sizeof(double));
   //1d array
   u_mean = (double*) malloc(layer * sizeof(double));
   v_mean = (double*) malloc(layer * sizeof(double));
@@ -95,7 +139,8 @@ void malloc_2d(void)
   v_rms = (double*) malloc(layer * sizeof(double));
   w_rms = (double*) malloc(layer * sizeof(double));
 
-  dissipation = (double*) malloc(layer * sizeof(double)); 
+  dissipation_2d = (double*) malloc(size * sizeof(double)); 
+  dissipation = (double*) malloc(layer * sizeof(double));
 }
 
 void free_2d(void)
@@ -117,38 +162,9 @@ void free_2d(void)
   free(wx_2d);
   free(wy_2d);
   free(wz_2d);
+  free(k_2d);
+  free(dissipation_2d);
 }  
-
-void analyze_2d(char *name)
-{
-  malloc_2d();
-
-/*
-  // interpolate velocity from 3d to 2d
-  extract_surface_z(zpos, layer, uf, vf, wf, u_2d, v_2d, w_2d);
-  extract_surface_z(zpos, layer, wx, wy, wz, wx_2d, wy_2d, wz_2d);
-
-  // store the min and max value on each plane
-  store_min_max(dom.Gcc.s2, u_2d, g_u);
-  store_min_max(dom.Gcc.s2, v_2d, g_v);
-  store_min_max(dom.Gcc.s2, w_2d, g_w);  
-
-  store_min_max(dom.Gcc.s2, wx_2d, g_wx);
-  store_min_max(dom.Gcc.s2, wy_2d, g_wy);
-  store_min_max(dom.Gcc.s2, wz_2d, g_wz);
-*/
-
-  variable_in_cage(wx, wy, wz, zpos[0]);
-
-  // calculate mean and rms velocity on each plane
-  //mean_vel_surface(layer, u_2d, v_2d, w_2d);
-
-  //dissipation_2d(nu);
-
-  //record_2d(name);
-
-  free_2d();
-} 
 
 void extract_surface_z(double *zpos, int layer, double *uf, double *vf, double *wf, double *u_2d, double *v_2d, double *w_2d)
 {  
@@ -177,11 +193,21 @@ void extract_surface_z(double *zpos, int layer, double *uf, double *vf, double *
   }
 }
 
+void calculate_mean_on_plane(double *f_mean, double *f)
+{
+  for (int k = 0; k < layer; k++) {
+    f_mean[k] = mean(dom.Gcc.s2, f+k*dom.Gcc.s2);
+  }
+}  
+
+
+
 void mean_vel_surface(int layer, double *u_2d, double *v_2d, double *w_2d)
 {
+  
   double *tmp;
   tmp = (double*) malloc(dom.Gcc.s2 * sizeof(double));
- 
+
   for (int k = 0; k < layer; k++) {
     u_mean[k] = mean(dom.Gcc.s2, u_2d + k*dom.Gcc.s2);
     v_mean[k] = mean(dom.Gcc.s2, v_2d + k*dom.Gcc.s2);
@@ -193,6 +219,8 @@ void mean_vel_surface(int layer, double *u_2d, double *v_2d, double *w_2d)
     //calculate (u - u_mean)*(u - u_mean)
     sub(dom.Gcc.s2, u_2d + k*dom.Gcc.s2, tmp, tmp); 
     multiply(dom.Gcc.s2, tmp, tmp, tmp);
+    add(dom.Gcc.s2, k_2d + k*dom.Gcc.s2, tmp, k_2d + k*dom.Gcc.s2);
+ 
     u_rms[k] = mean(dom.Gcc.s2, tmp);
     u_rms[k] = sqrt(u_rms[k]); 
 
@@ -201,6 +229,7 @@ void mean_vel_surface(int layer, double *u_2d, double *v_2d, double *w_2d)
     } 
     sub(dom.Gcc.s2, v_2d + k*dom.Gcc.s2, tmp, tmp);
     multiply(dom.Gcc.s2, tmp, tmp, tmp);
+    add(dom.Gcc.s2, k_2d + k*dom.Gcc.s2, tmp, k_2d + k*dom.Gcc.s2);
     v_rms[k] = mean(dom.Gcc.s2, tmp);
     v_rms[k] = sqrt(v_rms[k]);  
 
@@ -209,61 +238,18 @@ void mean_vel_surface(int layer, double *u_2d, double *v_2d, double *w_2d)
     } 
     sub(dom.Gcc.s2, w_2d + k*dom.Gcc.s2, tmp, tmp);
     multiply(dom.Gcc.s2, tmp, tmp, tmp);
+    add(dom.Gcc.s2, k_2d + k*dom.Gcc.s2, tmp, k_2d + k*dom.Gcc.s2);
     w_rms[k] = mean(dom.Gcc.s2, tmp);
     w_rms[k] = sqrt(w_rms[k]);
+    
+    for (int i = 0; i < dom.Gcc.s2; i++) {
+      k_2d[i+k*dom.Gcc.s2] = sqrt(k_2d[i+k*dom.Gcc.s2] * 0.5);
+    }
+
   }
 
   free(tmp);
 }
-
-void dissipation_2d(double nu)
-{
-
-  double *tmp1;
-  tmp1 = (double*) malloc(dom.Gcc.s3 * sizeof(double));
-  double *tmp2;
-  tmp2 = (double*) malloc(dom.Gcc.s3 * sizeof(double));
-
-  multiply(dom.Gcc.s3, fux, fux, tmp1);
-  multiply(dom.Gcc.s3, fvx, fvx, tmp2);
-  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
-
-  multiply(dom.Gcc.s3, fwx, fwx, tmp2);
-  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
-
-  multiply(dom.Gcc.s3, fuy, fuy, tmp2);
-  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
-
-  multiply(dom.Gcc.s3, fvy, fvy, tmp2);
-  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
-
-  multiply(dom.Gcc.s3, fwy, fwy, tmp2);
-  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
-
-  multiply(dom.Gcc.s3, fuz, fuz, tmp2);
-  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
-
-  multiply(dom.Gcc.s3, fvz, fvz, tmp2);
-  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
-
-  multiply(dom.Gcc.s3, fwz, fwz, tmp2);
-  add(dom.Gcc.s3, tmp1, tmp2, tmp1);
-
-  double *tmp;
-  tmp = (double*) malloc(layer*dom.Gcc.s2 * sizeof(double));
-
-  extract_surface_z(zpos, layer, tmp1, tmp1, tmp1, tmp, tmp, tmp);
-
-  for (int k = 0; k < layer; k++) {
-    dissipation[k] = mean(dom.Gcc.s2, tmp+k*dom.Gcc.s2);
-    dissipation[k] = nu * dissipation[k];
-    //printf("dissipation on plane %d is %f\n", k, dissipation[k]);
-  }
-
-  free(tmp1);
-  free(tmp2);
-  free(tmp);
-}   
 
 void variable_in_cage(double *fx, double *fy, double *fz, double fpos)
 {
@@ -512,6 +498,30 @@ void store_min_max(int N, double *f, min_max_struct *g_f)
   }
 }
 
+void extract_line_data_from_2d(double *f, double *f_cross_vel, double avg_factor)
+{
+
+  for(int k = 0; k < layer; k++) {
+    for (int i = 0; i < dom.Gcc.s1; i++) {
+      f_cross_vel[i+k*dom.Gcc.s1] += (f[i+104*dom.Gcc.s1+k*dom.Gcc.s2] + f[i+105*dom.Gcc.s1+k*dom.Gcc.s2]) * 0.5 * avg_factor;
+    }
+  }
+}
+
+void extract_point_data_from_2d(double *f, double *f_deficit, double avg_factor)
+{
+  double avg = 0.0;
+
+  for(int k = 0; k < layer; k++) {
+    avg = 0.25*(f[105+104*dom.Gcc.s1+k*dom.Gcc.s2]+f[106+104*dom.Gcc.s1+k*dom.Gcc.s2]+f[105+105*dom.Gcc.s1+k*dom.Gcc.s2]+f[106+105*dom.Gcc.s1+k*dom.Gcc.s2]);
+    
+    f_deficit[k] += avg * avg_factor;
+  }
+}
+
+
+
+
 void record_2d_scalar(char *name, int layer, int M, double *r, double *f)
 {
   //create the file
@@ -544,7 +554,7 @@ void record_2d_init(char *name)
   // create the file for each surface
   for (int k = 0; k < layer; k++) {
     char path[FILE_NAME_SIZE] = "";
-    sprintf(path, "%s/record/%s_%d", ROOT_DIR, name, k);
+    sprintf(path, "%s/dataproc/%s_%d", ROOT_DIR, name, k);
     FILE *rec = fopen(path, "w");
     if(rec == NULL) {
       fprintf(stderr, "Could not open file %s_%d\n", name, k);
@@ -570,7 +580,7 @@ void record_2d(char *name)
   // open the file
   for (int k = 0; k < layer; k++) {
     char path[FILE_NAME_SIZE] = "";
-    sprintf(path, "%s/record/%s_%d", ROOT_DIR, name, k);
+    sprintf(path, "%s/dataproc/%s_%d", ROOT_DIR, name, k);
     FILE *rec = fopen(path, "r+");
     if(rec == NULL) {
       record_2d_init(name);
@@ -589,7 +599,7 @@ void record_2d(char *name)
     fprintf(rec, "%-15f", u_rms[k]);
     fprintf(rec, "%-15f", v_rms[k]);
     fprintf(rec, "%-15f", w_rms[k]);
-   
+ 
     // close the file
     fclose(rec);
   }

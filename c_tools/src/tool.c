@@ -86,7 +86,7 @@ void gradient_z(double *gradz, double *f, double dz, int in, int jn, int kn)
   for(int i = 0; i < in; i++){
     for(int j = 0; j < jn; j++){
        gradz[i+j*s1] = (f[i+j*s1+s2] - f[i+j*s1])/dz;
-      gradz[i+j*s1+(kn-1)*s2] = (f[i+j*s1+(kn-1)*s2] - f[i+j*s1+(kn-2)*s2])/dz;
+       gradz[i+j*s1+(kn-1)*s2] = (f[i+j*s1+(kn-1)*s2] - f[i+j*s1+(kn-2)*s2])/dz;
     }
   }
 
