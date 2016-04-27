@@ -11,11 +11,6 @@
 #include "3d.h"
 
 /**** FUNCTIONS ****/
-void dissipation_in_cage(void);
-/*
- * calculate the averaged dissipation within a shell near each particle
- */
-
 void mean_velocity(void);
 
 void rms_velocity(void);
@@ -60,7 +55,13 @@ double w_rms;
 int fluid_cell; 
 void analyze_3d(char *name)
 {
-  dissipation_in_cage();
+  variable_in_part_surround_cage(dissipation_3d, 1.0, 1.1, "dissipation_each_part","dissipation_total_part_r=1.1");
+  variable_in_part_surround_cage(dissipation_3d, 1.0, 1.5, "dissipation_each_part","dissipation_total_part_r=1.5");
+  variable_in_part_surround_cage(dissipation_3d, 1.0, 2, "dissipation_each_part","dissipation_total_part_r=2");
+  variable_in_part_surround_cage(dissipation_3d, 1.0, 3, "dissipation_each_part","dissipation_total_part_r=3");
+  variable_in_part_surround_cage(dissipation_3d, 1.0, 4, "dissipation_each_part","dissipation_total_part_r=4");
+  variable_in_part_surround_cage(dissipation_3d, 1.0, 5, "dissipation_each_part","dissipation_total_part_r=5");  
+
   dissipation_overall = 0.0;
 
   //dissipation_overall = mean(dom.Gcc.s3, dissipation_3d);
@@ -223,23 +224,26 @@ void store_min_max_3d(double *f, min_max_struct *g_f)
   if(tmp > g_f[0].max) g_f[0].max = tmp;
 }
 
-void dissipation_in_cage(void)
+void variable_in_part_surround_cage(double *f, double rs, double re, char *name_each, char *name_total)
 {
 
   // calculate dissipation in the cage for each particle 
-  double *dissipation_each_part;
-  dissipation_each_part = (double*) malloc(nparts * sizeof(double));
+  double *f_each_part;
+  f_each_part = (double*) malloc(nparts * sizeof(double));
   double *ncells;
   ncells = (double *) malloc(nparts * sizeof(double));
  
-  double x, y, z, a, d;
+  double x, y, z, d;
   double cx1, cx2, cy1, cy2, cz1, cz2;
 
   for (int i = 0; i < nparts; i++) {
-    dissipation_each_part[i] = 0.0;
+    f_each_part[i] = 0.0;
     ncells[i] = 0;
   }
 
+  // if particle number is large, loop over all fluid cells; else loop over each particle
+
+  if (nparts > 20) {
   for (int i = 0; i < dom.Gcc.in; i++) {
     x = dom.xs + (i + 0.5)*dom.dx;
     for (int j = 0; j < dom.Gcc.jn; j++) {
@@ -247,8 +251,9 @@ void dissipation_in_cage(void)
       for (int k = 0; k < dom.Gcc.kn; k++) {
         z = dom.zs + (k + 0.5)*dom.dz; 
         for (int p = 0; p < nparts; p++) {
-          a = parts[p].r;
-          d = 1.15*parts[p].r;
+          rs = rs*parts[p].r;
+          re = re*parts[p].r;
+          d = re;
 
           cx1 = parts[p].x;
 					if(parts[p].x - d < dom.xs) cx1 = parts[p].x + dom.xl;
@@ -265,35 +270,59 @@ void dissipation_in_cage(void)
           if(parts[p].z + d > dom.ze) cz1 = parts[p].z - dom.zl;
           cz2 = parts[p].z;
 
-          int check_1 = ((x - cx1)*(x-cx1) + (y - cy1)*(y-cy1) + (z - cz1)*(z-cz1) - d*d < 0) && ((x - cx1)*(x-cx1) + (y - cy1)*(y-cy1) + (z - cz1)*(z-cz1) - a*a > 0);
-          int check_2 = ((x - cx1)*(x-cx1) + (y - cy1)*(y-cy1) + (z - cz2)*(z-cz2) - d*d < 0) && ((x - cx1)*(x-cx1) + (y - cy1)*(y-cy1) + (z - cz2)*(z-cz2) - a*a > 0);
-          int check_3 = ((x - cx1)*(x-cx1) + (y - cy2)*(y-cy2) + (z - cz1)*(z-cz1) - d*d < 0) && ((x - cx1)*(x-cx1) + (y - cy2)*(y-cy2) + (z - cz1)*(z-cz1) - a*a > 0);
-          int check_4 = ((x - cx1)*(x-cx1) + (y - cy2)*(y-cy2) + (z - cz2)*(z-cz2) - d*d < 0) && ((x - cx1)*(x-cx1) + (y - cy2)*(y-cy2) + (z - cz2)*(z-cz2) - a*a > 0);
-          int check_5 = ((x - cx2)*(x-cx2) + (y - cy1)*(y-cy1) + (z - cz1)*(z-cz1) - d*d < 0) && ((x - cx2)*(x-cx2) + (y - cy1)*(y-cy1) + (z - cz1)*(z-cz1) - a*a > 0);
-          int check_6 = ((x - cx2)*(x-cx2) + (y - cy1)*(y-cy1) + (z - cz2)*(z-cz2) - d*d < 0) && ((x - cx2)*(x-cx2) + (y - cy1)*(y-cy1) + (z - cz2)*(z-cz2) - a*a > 0);
-          int check_7 = ((x - cx2)*(x-cx2) + (y - cy2)*(y-cy2) + (z - cz1)*(z-cz1) - d*d < 0) && ((x - cx2)*(x-cx2) + (y - cy2)*(y-cy2) + (z - cz1)*(z-cz1) - a*a > 0);
-          int check_8 = ((x - cx2)*(x-cx2) + (y - cy2)*(y-cy2) + (z - cz2)*(z-cz2) - d*d < 0) && ((x - cx2)*(x-cx2) + (y - cy2)*(y-cy2) + (z - cz2)*(z-cz2) - a*a > 0);	
+          int check_1 = ((x - cx1)*(x-cx1) + (y - cy1)*(y-cy1) + (z - cz1)*(z-cz1) - re*re < 0) && ((x - cx1)*(x-cx1) + (y - cy1)*(y-cy1) + (z - cz1)*(z-cz1) - rs*rs > 0); 
+         int check_2 = ((x - cx1)*(x-cx1) + (y - cy1)*(y-cy1) + (z - cz2)*(z-cz2) - re*re < 0) && ((x - cx1)*(x-cx1) + (y - cy1)*(y-cy1) + (z - cz2)*(z-cz2) - rs*rs > 0);
+          int check_3 = ((x - cx1)*(x-cx1) + (y - cy2)*(y-cy2) + (z - cz1)*(z-cz1) - re*re < 0) && ((x - cx1)*(x-cx1) + (y - cy2)*(y-cy2) + (z - cz1)*(z-cz1) - rs*rs > 0);
+          int check_4 = ((x - cx1)*(x-cx1) + (y - cy2)*(y-cy2) + (z - cz2)*(z-cz2) - re*re < 0) && ((x - cx1)*(x-cx1) + (y - cy2)*(y-cy2) + (z - cz2)*(z-cz2) - rs*rs > 0);
+          int check_5 = ((x - cx2)*(x-cx2) + (y - cy1)*(y-cy1) + (z - cz1)*(z-cz1) - re*re < 0) && ((x - cx2)*(x-cx2) + (y - cy1)*(y-cy1) + (z - cz1)*(z-cz1) - rs*rs > 0);
+          int check_6 = ((x - cx2)*(x-cx2) + (y - cy1)*(y-cy1) + (z - cz2)*(z-cz2) - re*re < 0) && ((x - cx2)*(x-cx2) + (y - cy1)*(y-cy1) + (z - cz2)*(z-cz2) - rs*rs > 0);
+          int check_7 = ((x - cx2)*(x-cx2) + (y - cy2)*(y-cy2) + (z - cz1)*(z-cz1) - re*re < 0) && ((x - cx2)*(x-cx2) + (y - cy2)*(y-cy2) + (z - cz1)*(z-cz1) - rs*rs > 0);
+          int check_8 = ((x - cx2)*(x-cx2) + (y - cy2)*(y-cy2) + (z - cz2)*(z-cz2) - re*re < 0) && ((x - cx2)*(x-cx2) + (y - cy2)*(y-cy2) + (z - cz2)*(z-cz2) - rs*rs > 0);	
           int check = (check_1 + check_2 + check_3 + check_4 + check_5 + check_6 + check_7 + check_8)!= 0;
-          dissipation_each_part[p] += dissipation_3d[i + j*dom.Gcc.s1 + k*dom.Gcc.s2]*check;
+          f_each_part[p] += f[i + j*dom.Gcc.s1 + k*dom.Gcc.s2]*check;
           ncells[p] += 1.0*check; 
         }
       }
     }
-  } 
-   
-  double *dissipation_total;
-  dissipation_total = (double*) malloc(1 * sizeof(double));
-  for (int i = 0; i < nparts; i++) {
-    dissipation_each_part[i] *= nu;
-    dissipation_each_part[i] = dissipation_each_part[i] / ncells[i];
-    dissipation_total[0] += dissipation_each_part[i]/(double) nparts;
   }
-  record_evolution_3d("dissipation_each_particle", nparts, dissipation_each_part);
-  record_evolution_3d("dissipation_total_particle", 1, dissipation_total);  
+  } 
+  else {
+    for (int p = 0; p < nparts; p++) {
+      int xs = (parts[p].x - dom.xs - dom.dx*0.5)/dom.dx - re*parts[p].r/dom.dx - 2;  
+      int xe = xs + re*parts[p].r*2/dom.dx + 4;
+      int ys = (parts[p].y - dom.ys - dom.dy*0.5)/dom.dy - re*parts[p].r/dom.dy - 2;
+      int ye = ys + re*parts[p].r*2/dom.dy + 4;
+      int zs = (parts[p].z - dom.zs - dom.dz*0.5)/dom.dz - re*parts[p].r/dom.dz - 2;
+      int ze = zs + re*parts[p].r*2/dom.dz + 4;
+      for (int i = xs; i < xe; i++) {
+        x = dom.xs + (i + 0.5)*dom.dx;
+        for (int j = ys; j < ye; j++) {
+          y = dom.ys + (j + 0.5)*dom.dy;
+          for (int k = zs; k < ze; k++) {
+            z = dom.zs + (k + 0.5)*dom.dz;
+            d = (x - parts[p].x)*(x - parts[p].x) + (y-parts[p].y)*(y-parts[p].y) + (z-parts[p].z)*(z-parts[p].z);
+            int check = d - re*re*parts[p].r*parts[p].r < 0 && d - rs*rs*parts[p].r*parts[p].r > 0;
+            f_each_part[p] += check * f[i + j*dom.Gcc.s1 + k*dom.Gcc.s2];
+            ncells[p] += 1.0*check;
+          }
+        }
+      }
+    }
+  }
+
+  double *f_total;
+  f_total = (double*) malloc(1 * sizeof(double));
+  for (int i = 0; i < nparts; i++) {
+    f_each_part[i] *= nu;
+    f_each_part[i] = f_each_part[i] / ncells[i];
+    f_total[0] += f_each_part[i]/(double) nparts;
+  }
+  record_evolution_3d(name_each, nparts, f_each_part);
+  record_evolution_3d(name_total, 1, f_total);  
   record_evolution_3d("ncells_each_particle", nparts, ncells); 
  
-  free(dissipation_each_part);
-  free(dissipation_total);
+  free(f_each_part);
+  free(f_total);
 }   
  
 void mean_velocity(void)

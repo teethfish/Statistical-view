@@ -20,7 +20,7 @@
 #define ROOT_DIR "."
 #define INPUT_DIR "input"
 #define OUTPUT_DIR "output"
-#define DATA_OUT_DIR "data"
+#define DATA_OUT_DIR "dataproc"
 #define MAX_THREADS_1D 128
 #define MAX_THREADS_DIM 16
 
